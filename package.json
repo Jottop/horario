@@ -11,7 +11,6 @@
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "eas-cli": "^21.3.0",
     "expo": "~51.0.0",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
@@ -22,7 +21,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.2.79",
-    "typescript": "^5.3.0"
+    "typescript": "~5.3.3"
   },
   "private": true
 }
