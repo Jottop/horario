@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -34,6 +33,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
   const [endTime, setEndTime] = useState('10:00');
   const [color, setColor] = useState(PALETTE[0]);
   const [error, setError] = useState('');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -43,12 +43,13 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
       setEndTime(initialEvent?.endTime ?? '10:00');
       setColor(initialEvent?.color ?? PALETTE[0]);
       setError('');
+      setConfirmingDelete(false);
     }
   }, [visible, initialEvent]);
 
   function handleSave() {
     if (!title.trim()) {
-      setError('Ingresá un nombre para la clase.');
+      setError('Ingresa un nombre para la clase.');
       return;
     }
     if (!isValidTime(startTime) || !isValidTime(endTime)) {
@@ -71,12 +72,9 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
     onSave(event);
   }
 
-  function handleDelete() {
+  function handleConfirmDelete() {
     if (!initialEvent) return;
-    Alert.alert('Eliminar clase', `¿Seguro que querés eliminar "${initialEvent.title}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: () => onDelete(initialEvent.id) },
-    ]);
+    onDelete(initialEvent.id);
   }
 
   return (
@@ -163,10 +161,32 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
               </Pressable>
             </View>
 
-            {isEditing && (
-              <Pressable style={styles.deleteButton} onPress={handleDelete}>
+            {isEditing && !confirmingDelete && (
+              <Pressable style={styles.deleteButton} onPress={() => setConfirmingDelete(true)}>
                 <Text style={styles.deleteButtonText}>Eliminar clase</Text>
               </Pressable>
+            )}
+
+            {isEditing && confirmingDelete && (
+              <View style={styles.confirmBox}>
+                <Text style={styles.confirmText}>
+                  ¿Seguro que quieres eliminar "{initialEvent?.title}"?
+                </Text>
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => setConfirmingDelete(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.button, styles.confirmDeleteButton]}
+                    onPress={handleConfirmDelete}
+                  >
+                    <Text style={styles.saveButtonText}>Sí, eliminar</Text>
+                  </Pressable>
+                </View>
+              </View>
             )}
           </ScrollView>
         </View>
@@ -293,5 +313,19 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     color: COLORS.danger,
     fontWeight: '600',
+  },
+  confirmBox: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: '#FBEAEA',
+  },
+  confirmText: {
+    color: COLORS.text,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  confirmDeleteButton: {
+    backgroundColor: COLORS.danger,
   },
 });

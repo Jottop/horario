@@ -61,7 +61,7 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <View style={styles.titleBar}>
-        <Text style={styles.title}>Horario Cami</Text>
+        <Text style={styles.title}>Mi Horario Semanal</Text>
       </View>
 
       <WeekCalendar events={events} onEventPress={handleEventPress} />
