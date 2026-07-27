@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Mi Horario Semanal",
+    "slug": "study-calendar-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFFFFF"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3fff81f4-1cc4-4fbf-a27f-9a262d42fef6"
+      }
+    }
+  }
+}
