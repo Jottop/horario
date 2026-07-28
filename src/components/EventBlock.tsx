@@ -12,7 +12,7 @@ interface Props {
 export default function EventBlock({ event, onPress }: Props) {
   const top = getEventTop(event.startTime);
   const height = getEventHeight(event.startTime, event.endTime);
-  const compact = height < 46;
+  const compact = height < 56;
 
   return (
     <Pressable
@@ -30,9 +30,14 @@ export default function EventBlock({ event, onPress }: Props) {
         {event.title}
       </Text>
       {!compact && (
-        <Text style={styles.time} numberOfLines={1}>
-          {formatDisplayTime(event.startTime)} - {formatDisplayTime(event.endTime)}
-        </Text>
+        <>
+          <Text style={[styles.time, styles.timeFirst]} numberOfLines={1}>
+            {formatDisplayTime(event.startTime)}
+          </Text>
+          <Text style={styles.time} numberOfLines={1}>
+            {formatDisplayTime(event.endTime)}
+          </Text>
+        </>
       )}
     </Pressable>
   );
@@ -61,6 +66,9 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: COLORS.text,
     opacity: 0.75,
+    lineHeight: 11,
+  },
+  timeFirst: {
     marginTop: 2,
   },
 });

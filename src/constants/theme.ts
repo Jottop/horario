@@ -25,4 +25,4 @@ export const PALETTE = [
 export const GRID_START_HOUR = 7; // 07:00
 export const GRID_END_HOUR = 22; // 22:00
 export const HOUR_HEIGHT = 60; // px por hora
-export const TIME_LABEL_WIDTH = 46; // px
+export const TIME_LABEL_WIDTH = 28; // px
