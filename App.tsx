@@ -59,10 +59,13 @@ function AppContent() {
     setModalVisible(true);
   }
 
-  function handleSave(event: ClassEvent) {
+  function handleSave(newEvents: ClassEvent[]) {
     setEvents((prev) => {
-      const exists = prev.some((e) => e.id === event.id);
-      return exists ? prev.map((e) => (e.id === event.id ? event : e)) : [...prev, event];
+      // Los ids que ya existían en prev corresponden a horarios editados (se reemplazan);
+      // los ids nuevos corresponden a horarios agregados (se suman).
+      const incomingIds = new Set(newEvents.map((e) => e.id));
+      const kept = prev.filter((e) => !incomingIds.has(e.id));
+      return [...kept, ...newEvents];
     });
     setModalVisible(false);
   }
@@ -72,6 +75,10 @@ function AppContent() {
     setModalVisible(false);
   }
 
+  function handleClearAll() {
+    setEvents([]);
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
@@ -79,7 +86,7 @@ function AppContent() {
         <Pressable style={styles.menuButton} onPress={() => setMenuVisible(true)} hitSlop={12}>
           <Text style={styles.menuIcon}>☰</Text>
         </Pressable>
-        <Text style={styles.title}>Mi Horario Semanal</Text>
+        <Text style={[styles.title, { color: gridColor }]}>Mi Horario Semanal</Text>
         <View style={styles.menuButton} />
       </View>
 
@@ -109,6 +116,7 @@ function AppContent() {
         backgroundColor={backgroundColor}
         onChangeGridColor={setGridColor}
         onChangeBackgroundColor={setBackgroundColor}
+        onClearAll={handleClearAll}
       />
     </SafeAreaView>
   );

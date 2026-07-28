@@ -53,7 +53,7 @@ export default function WeekCalendar({
         <View style={{ width: TIME_LABEL_WIDTH }} />
         {visibleDayIndices.map((dayIndex) => (
           <View key={dayIndex} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
-            <Text style={styles.dayHeaderText} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.dayHeaderText, { color: gridColor }]} numberOfLines={1} adjustsFontSizeToFit>
               {DAYS_SHORT[dayIndex]}
             </Text>
           </View>
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   dayHeaderText: {
-    color: COLORS.headerText,
     fontWeight: '600',
     fontSize: 13,
   },

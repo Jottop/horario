@@ -1,7 +1,7 @@
 export const COLORS = {
   background: '#FFFFFF',
   surface: '#FDFBF8',
-  gridLine: '#EAD9C7',
+  gridLine: '#B49A7C',
   headerText: '#B08968',
   text: '#3A3A3A',
   textLight: '#9A9A9A',
@@ -27,28 +27,32 @@ export const GRID_END_HOUR = 22; // 22:00
 export const HOUR_HEIGHT = 60; // px por hora
 export const TIME_LABEL_WIDTH = 28; // px
 
-// Apariencia personalizable (menú lateral > Diseño)
+// Apariencia personalizable (menú lateral > Ajustar colores).
+// El primero de cada lista es el valor original (el que restaura "Restablecer colores").
 export const DEFAULT_APPEARANCE = {
   gridColor: COLORS.gridLine,
   backgroundColor: COLORS.background,
 };
 
-// Opciones de color para las líneas de la grilla
+// 6 colores pastel (un poco más oscuros para buen contraste, ya que también se usan
+// en el título y los nombres de los días) para las líneas de la grilla, pensados para
+// combinar bien con cualquiera de los 6 fondos de BACKGROUND_COLOR_OPTIONS.
 export const GRID_COLOR_OPTIONS = [
-  '#EAD9C7', // tostado (default)
-  '#D9D9D6',
-  '#B5B3AA',
-  '#8FA8C7',
-  '#C7A6C2',
-  '#2C2C2A',
+  '#B49A7C', // tostado (original)
+  '#7FA8C9', // celeste
+  '#A98BB0', // lavanda
+  '#7FA873', // verde
+  '#BC8078', // terracota
+  '#7A7A7A', // gris
 ];
 
-// Opciones de color de fondo (tonos claros, para que el texto oscuro siga siendo legible)
+// 6 fondos claros, cada uno emparejado en tono con la línea de grilla del mismo índice
+// (aunque el usuario puede combinarlos libremente).
 export const BACKGROUND_COLOR_OPTIONS = [
-  '#FFFFFF', // blanco (default)
-  '#FDFBF8',
-  '#F5F5F0',
-  '#EAF3FB',
-  '#FDF2E9',
-  '#F3EAF7',
+  '#FFFFFF', // blanco (original)
+  '#EAF2F8', // celeste muy claro
+  '#F5EEF8', // lavanda muy claro
+  '#EDF5EA', // verde muy claro
+  '#FBEEEA', // terracota muy claro
+  '#F2F2F2', // gris muy claro
 ];

@@ -17,21 +17,31 @@ interface Props {
   visible: boolean;
   initialEvent: ClassEvent | null;
   onClose: () => void;
-  onSave: (event: ClassEvent) => void;
+  /** Puede devolver varios eventos a la vez (uno por cada horario agregado al crear una clase nueva) */
+  onSave: (events: ClassEvent[]) => void;
   onDelete: (id: string) => void;
+}
+
+interface ScheduleSlot {
+  key: string;
+  dayIndex: number;
+  startTime: string;
+  endTime: string;
 }
 
 function makeId(): string {
   return `evt-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+function makeSlot(dayIndex = 0): ScheduleSlot {
+  return { key: makeId(), dayIndex, startTime: '09:00', endTime: '10:00' };
+}
+
 export default function EventFormModal({ visible, initialEvent, onClose, onSave, onDelete }: Props) {
   const isEditing = !!initialEvent;
 
   const [title, setTitle] = useState('');
-  const [dayIndex, setDayIndex] = useState(0);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
+  const [slots, setSlots] = useState<ScheduleSlot[]>([makeSlot()]);
   const [color, setColor] = useState(PALETTE[0]);
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -39,34 +49,59 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
   useEffect(() => {
     if (visible) {
       setTitle(initialEvent?.title ?? '');
-      setDayIndex(initialEvent?.dayIndex ?? 0);
-      setStartTime(initialEvent?.startTime ?? '09:00');
-      setEndTime(initialEvent?.endTime ?? '10:00');
       setColor(initialEvent?.color ?? PALETTE[0]);
       setError('');
       setConfirmingDelete(false);
+      if (initialEvent) {
+        // Editar: siempre un único horario, el del bloque que se tocó.
+        setSlots([
+          {
+            key: initialEvent.id,
+            dayIndex: initialEvent.dayIndex,
+            startTime: initialEvent.startTime,
+            endTime: initialEvent.endTime,
+          },
+        ]);
+      } else {
+        setSlots([makeSlot()]);
+      }
     }
   }, [visible, initialEvent]);
 
+  function updateSlot(key: string, changes: Partial<ScheduleSlot>) {
+    setSlots((prev) => prev.map((s) => (s.key === key ? { ...s, ...changes } : s)));
+  }
+
+  function addSlot() {
+    const lastDay = slots[slots.length - 1]?.dayIndex ?? 0;
+    setSlots((prev) => [...prev, makeSlot(Math.min(lastDay + 1, 6))]);
+  }
+
+  function removeSlot(key: string) {
+    setSlots((prev) => (prev.length > 1 ? prev.filter((s) => s.key !== key) : prev));
+  }
+
   function handleSave() {
     if (!title.trim()) {
-      setError('Ingresa un nombre para la clase.');
+      setError('Ingresá un nombre para la clase.');
       return;
     }
-    if (!isEndAfterStart(startTime, endTime)) {
-      setError('La hora de fin debe ser posterior a la de inicio.');
-      return;
+    for (const slot of slots) {
+      if (!isEndAfterStart(slot.startTime, slot.endTime)) {
+        setError('La hora de fin debe ser posterior a la de inicio en todos los horarios.');
+        return;
+      }
     }
 
-    const event: ClassEvent = {
-      id: initialEvent?.id ?? makeId(),
+    const events: ClassEvent[] = slots.map((slot, idx) => ({
+      id: isEditing && idx === 0 ? initialEvent!.id : makeId(),
       title: title.trim(),
-      dayIndex,
-      startTime,
-      endTime,
+      dayIndex: slot.dayIndex,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
       color,
-    };
-    onSave(event);
+    }));
+    onSave(events);
   }
 
   function handleConfirmDelete() {
@@ -90,31 +125,56 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
               placeholderTextColor={COLORS.textLight}
             />
 
-            <Text style={styles.label}>Día</Text>
-            <View style={styles.chipRow}>
-              {DAYS_FULL.map((day, idx) => (
-                <Pressable
-                  key={day}
-                  onPress={() => setDayIndex(idx)}
-                  style={[styles.chip, dayIndex === idx && styles.chipSelected]}
-                >
-                  <Text style={[styles.chipText, dayIndex === idx && styles.chipTextSelected]}>
-                    {day.slice(0, 3)}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            {slots.map((slot, idx) => (
+              <View key={slot.key} style={styles.slotBlock}>
+                {slots.length > 1 && (
+                  <View style={styles.slotHeaderRow}>
+                    <Text style={styles.slotHeaderText}>Horario {idx + 1}</Text>
+                    <Pressable onPress={() => removeSlot(slot.key)} hitSlop={8}>
+                      <Text style={styles.removeSlotText}>Quitar ✕</Text>
+                    </Pressable>
+                  </View>
+                )}
 
-            <View style={styles.timeRow}>
-              <View style={styles.timeField}>
-                <Text style={styles.label}>Inicio</Text>
-                <TimePickerField value={startTime} onChange={setStartTime} />
+                <Text style={styles.label}>Día</Text>
+                <View style={styles.chipRow}>
+                  {DAYS_FULL.map((day, dayIdx) => (
+                    <Pressable
+                      key={day}
+                      onPress={() => updateSlot(slot.key, { dayIndex: dayIdx })}
+                      style={[styles.chip, slot.dayIndex === dayIdx && styles.chipSelected]}
+                    >
+                      <Text style={[styles.chipText, slot.dayIndex === dayIdx && styles.chipTextSelected]}>
+                        {day.slice(0, 3)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <View style={styles.timeRow}>
+                  <View style={styles.timeField}>
+                    <Text style={styles.label}>Inicio</Text>
+                    <TimePickerField
+                      value={slot.startTime}
+                      onChange={(t) => updateSlot(slot.key, { startTime: t })}
+                    />
+                  </View>
+                  <View style={styles.timeField}>
+                    <Text style={styles.label}>Fin</Text>
+                    <TimePickerField
+                      value={slot.endTime}
+                      onChange={(t) => updateSlot(slot.key, { endTime: t })}
+                    />
+                  </View>
+                </View>
               </View>
-              <View style={styles.timeField}>
-                <Text style={styles.label}>Fin</Text>
-                <TimePickerField value={endTime} onChange={setEndTime} />
-              </View>
-            </View>
+            ))}
+
+            {!isEditing && (
+              <Pressable style={styles.addSlotButton} onPress={addSlot}>
+                <Text style={styles.addSlotButtonText}>+ Agregar otro horario</Text>
+              </Pressable>
+            )}
 
             <Text style={styles.label}>Color</Text>
             <View style={styles.chipRow}>
@@ -151,7 +211,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
             {isEditing && confirmingDelete && (
               <View style={styles.confirmBox}>
                 <Text style={styles.confirmText}>
-                  ¿Seguro que quieres eliminar "{initialEvent?.title}"?
+                  ¿Seguro que querés eliminar "{initialEvent?.title}"?
                 </Text>
                 <View style={styles.actionsRow}>
                   <Pressable
@@ -211,6 +271,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
     backgroundColor: '#FFFFFF',
+  },
+  slotBlock: {
+    marginTop: 8,
+    paddingTop: 8,
+  },
+  slotHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gridLine,
+    paddingTop: 12,
+  },
+  slotHeaderText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  removeSlotText: {
+    fontSize: 13,
+    color: COLORS.danger,
+    fontWeight: '600',
+  },
+  addSlotButton: {
+    marginTop: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  addSlotButtonText: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   chipRow: {
     flexDirection: 'row',
