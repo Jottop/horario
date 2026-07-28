@@ -50,7 +50,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
 
   function handleSave() {
     if (!title.trim()) {
-      setError('Ingresá un nombre para la clase.');
+      setError('Ingresa un nombre para la clase.');
       return;
     }
     if (!isEndAfterStart(startTime, endTime)) {
@@ -151,7 +151,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
             {isEditing && confirmingDelete && (
               <View style={styles.confirmBox}>
                 <Text style={styles.confirmText}>
-                  ¿Seguro que querés eliminar "{initialEvent?.title}"?
+                  ¿Seguro que quieres eliminar "{initialEvent?.title}"?
                 </Text>
                 <View style={styles.actionsRow}>
                   <Pressable
