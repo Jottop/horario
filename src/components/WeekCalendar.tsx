@@ -29,13 +29,14 @@ export default function WeekCalendar({
     return arr;
   }, []);
 
-  // Lunes-Viernes siempre se muestran. Sábado/Domingo se agregan solo si
-  // hay al menos una clase cargada en ese día.
+  // Lunes-Viernes siempre se muestran. Sábado se agrega si tiene alguna clase,
+  // o si Domingo tiene alguna clase (Domingo "arrastra" a Sábado, pero no al revés).
   const visibleDayIndices = useMemo(() => {
+    const hasSaturday = events.some((e) => e.dayIndex === 5);
+    const hasSunday = events.some((e) => e.dayIndex === 6);
     const set = new Set<number>(DEFAULT_VISIBLE_DAYS);
-    events.forEach((e) => {
-      if (e.dayIndex === 5 || e.dayIndex === 6) set.add(e.dayIndex);
-    });
+    if (hasSaturday || hasSunday) set.add(5);
+    if (hasSunday) set.add(6);
     return Array.from(set).sort((a, b) => a - b);
   }, [events]);
 

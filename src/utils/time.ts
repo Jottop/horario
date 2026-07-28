@@ -44,3 +44,12 @@ export function formatDisplayTime(time: string): string {
 export function isEndAfterStart(startTime: string, endTime: string): boolean {
   return timeToMinutes(endTime) > timeToMinutes(startTime);
 }
+
+/** true si los rangos [startA,endA) y [startB,endB) se superponen en algún punto */
+export function doTimesOverlap(startA: string, endA: string, startB: string, endB: string): boolean {
+  const a1 = timeToMinutes(startA);
+  const a2 = timeToMinutes(endA);
+  const b1 = timeToMinutes(startB);
+  const b2 = timeToMinutes(endB);
+  return a1 < b2 && b1 < a2;
+}

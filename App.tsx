@@ -104,6 +104,7 @@ function AppContent() {
       <EventFormModal
         visible={modalVisible}
         initialEvent={editingEvent}
+        events={events}
         onClose={() => setModalVisible(false)}
         onSave={handleSave}
         onDelete={handleDelete}

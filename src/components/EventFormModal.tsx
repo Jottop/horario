@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { ClassEvent, DAYS_FULL } from '../types';
 import { COLORS, PALETTE } from '../constants/theme';
-import { isEndAfterStart } from '../utils/time';
+import { isEndAfterStart, doTimesOverlap } from '../utils/time';
 import TimePickerField from './TimePickerField';
 
 interface Props {
   visible: boolean;
   initialEvent: ClassEvent | null;
+  /** Todas las clases existentes, para validar que no se superpongan horarios */
+  events: ClassEvent[];
   onClose: () => void;
   /** Puede devolver varios eventos a la vez (uno por cada horario agregado al crear una clase nueva) */
   onSave: (events: ClassEvent[]) => void;
@@ -37,7 +39,7 @@ function makeSlot(dayIndex = 0): ScheduleSlot {
   return { key: makeId(), dayIndex, startTime: '09:00', endTime: '10:00' };
 }
 
-export default function EventFormModal({ visible, initialEvent, onClose, onSave, onDelete }: Props) {
+export default function EventFormModal({ visible, initialEvent, events, onClose, onSave, onDelete }: Props) {
   const isEditing = !!initialEvent;
 
   const [title, setTitle] = useState('');
@@ -83,7 +85,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
 
   function handleSave() {
     if (!title.trim()) {
-      setError('Ingresá un nombre para la clase.');
+      setError('Ingresa un nombre para la clase.');
       return;
     }
     for (const slot of slots) {
@@ -93,7 +95,34 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
       }
     }
 
-    const events: ClassEvent[] = slots.map((slot, idx) => ({
+    // Que no se superpongan entre sí los horarios que se están agregando ahora mismo
+    for (let i = 0; i < slots.length; i++) {
+      for (let j = i + 1; j < slots.length; j++) {
+        if (
+          slots[i].dayIndex === slots[j].dayIndex &&
+          doTimesOverlap(slots[i].startTime, slots[i].endTime, slots[j].startTime, slots[j].endTime)
+        ) {
+          setError(`Los horarios ${i + 1} y ${j + 1} se superponen entre sí.`);
+          return;
+        }
+      }
+    }
+
+    // Que no se superpongan con una clase ya existente (excluyendo la que se está editando)
+    for (const slot of slots) {
+      const conflict = events.find(
+        (e) =>
+          e.id !== initialEvent?.id &&
+          e.dayIndex === slot.dayIndex &&
+          doTimesOverlap(slot.startTime, slot.endTime, e.startTime, e.endTime)
+      );
+      if (conflict) {
+        setError(`Ya existe "${conflict.title}" ese día en ese horario.`);
+        return;
+      }
+    }
+
+    const newEvents: ClassEvent[] = slots.map((slot, idx) => ({
       id: isEditing && idx === 0 ? initialEvent!.id : makeId(),
       title: title.trim(),
       dayIndex: slot.dayIndex,
@@ -101,7 +130,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
       endTime: slot.endTime,
       color,
     }));
-    onSave(events);
+    onSave(newEvents);
   }
 
   function handleConfirmDelete() {
@@ -112,6 +141,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
+        <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.card}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.heading}>{isEditing ? 'Editar clase' : 'Nueva clase'}</Text>
@@ -124,6 +154,21 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
               placeholder="Ej: Zoología Funcional"
               placeholderTextColor={COLORS.textLight}
             />
+
+            <Text style={styles.label}>Color</Text>
+            <View style={styles.chipRow}>
+              {PALETTE.map((c) => (
+                <Pressable
+                  key={c}
+                  onPress={() => setColor(c)}
+                  style={[
+                    styles.swatch,
+                    { backgroundColor: c },
+                    color === c && styles.swatchSelected,
+                  ]}
+                />
+              ))}
+            </View>
 
             {slots.map((slot, idx) => (
               <View key={slot.key} style={styles.slotBlock}>
@@ -176,21 +221,6 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
               </Pressable>
             )}
 
-            <Text style={styles.label}>Color</Text>
-            <View style={styles.chipRow}>
-              {PALETTE.map((c) => (
-                <Pressable
-                  key={c}
-                  onPress={() => setColor(c)}
-                  style={[
-                    styles.swatch,
-                    { backgroundColor: c },
-                    color === c && styles.swatchSelected,
-                  ]}
-                />
-              ))}
-            </View>
-
             {!!error && <Text style={styles.error}>{error}</Text>}
 
             <View style={styles.actionsRow}>
@@ -211,7 +241,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
             {isEditing && confirmingDelete && (
               <View style={styles.confirmBox}>
                 <Text style={styles.confirmText}>
-                  ¿Seguro que querés eliminar "{initialEvent?.title}"?
+                  ¿Seguro que quieres eliminar "{initialEvent?.title}"?
                 </Text>
                 <View style={styles.actionsRow}>
                   <Pressable
@@ -241,6 +271,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.overlay,
     justifyContent: 'flex-end',
+  },
+  backdrop: {
+    flex: 1,
   },
   card: {
     backgroundColor: COLORS.surface,
