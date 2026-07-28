@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
   removeSlotText: {
     fontSize: 13,
     color: COLORS.danger,
+    marginRight: 6,
     fontWeight: '600',
   },
   addSlotButton: {
