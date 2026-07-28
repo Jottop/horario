@@ -8,7 +8,6 @@ import {
   GRID_END_HOUR,
   HOUR_HEIGHT,
   TIME_LABEL_WIDTH,
-  MIN_DAY_COLUMN_WIDTH,
 } from '../constants/theme';
 
 interface Props {
@@ -25,47 +24,23 @@ export default function WeekCalendar({ events, onEventPress }: Props) {
 
   const screenWidth = Dimensions.get('window').width;
   const availableWidth = screenWidth - TIME_LABEL_WIDTH;
-  const dayColumnWidth = Math.max(availableWidth / DAYS_SHORT.length, MIN_DAY_COLUMN_WIDTH);
+  // Las 5 columnas siempre se ajustan al ancho disponible: nunca hace falta
+  // scrollear horizontalmente para ver Viernes.
+  const dayColumnWidth = availableWidth / DAYS_SHORT.length;
   const gridHeight = (GRID_END_HOUR - GRID_START_HOUR) * HOUR_HEIGHT;
-  const needsHorizontalScroll = dayColumnWidth * DAYS_SHORT.length > availableWidth + 1;
-
-  const daysContent = (
-    <View style={{ flexDirection: 'row' }}>
-      {DAYS_SHORT.map((day, dayIndex) => (
-        <View key={day} style={[styles.dayColumn, { width: dayColumnWidth, height: gridHeight }]}>
-          {hours.map((h) => (
-            <View key={h} style={[styles.hourLine, { top: (h - GRID_START_HOUR) * HOUR_HEIGHT }]} />
-          ))}
-          {events
-            .filter((e) => e.dayIndex === dayIndex)
-            .map((event) => (
-              <EventBlock key={event.id} event={event} onPress={() => onEventPress(event)} />
-            ))}
-        </View>
-      ))}
-    </View>
-  );
 
   return (
     <View style={styles.container}>
-      {/* Encabezado de días (fijo, no scrollea verticalmente) */}
+      {/* Encabezado de días */}
       <View style={styles.headerRow}>
         <View style={{ width: TIME_LABEL_WIDTH }} />
-        {needsHorizontalScroll ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={false}>
-            {DAYS_SHORT.map((day) => (
-              <View key={day} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
-                <Text style={styles.dayHeaderText}>{day}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          DAYS_SHORT.map((day) => (
-            <View key={day} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
-              <Text style={styles.dayHeaderText}>{day}</Text>
-            </View>
-          ))
-        )}
+        {DAYS_SHORT.map((day) => (
+          <View key={day} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
+            <Text style={styles.dayHeaderText} numberOfLines={1} adjustsFontSizeToFit>
+              {day}
+            </Text>
+          </View>
+        ))}
       </View>
 
       <ScrollView>
@@ -77,13 +52,19 @@ export default function WeekCalendar({ events, onEventPress }: Props) {
               </View>
             ))}
           </View>
-          {needsHorizontalScroll ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {daysContent}
-            </ScrollView>
-          ) : (
-            daysContent
-          )}
+
+          {DAYS_SHORT.map((day, dayIndex) => (
+            <View key={day} style={[styles.dayColumn, { width: dayColumnWidth, height: gridHeight }]}>
+              {hours.map((h) => (
+                <View key={h} style={[styles.hourLine, { top: (h - GRID_START_HOUR) * HOUR_HEIGHT }]} />
+              ))}
+              {events
+                .filter((e) => e.dayIndex === dayIndex)
+                .map((event) => (
+                  <EventBlock key={event.id} event={event} onPress={() => onEventPress(event)} />
+                ))}
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -104,6 +85,7 @@ const styles = StyleSheet.create({
   dayHeaderCell: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 2,
   },
   dayHeaderText: {
     color: COLORS.headerText,
