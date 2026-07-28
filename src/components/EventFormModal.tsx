@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { ClassEvent, DAYS_FULL } from '../types';
 import { COLORS, PALETTE } from '../constants/theme';
-import { isEndAfterStart, isValidTime } from '../utils/time';
+import { isEndAfterStart } from '../utils/time';
+import TimePickerField from './TimePickerField';
 
 interface Props {
   visible: boolean;
@@ -49,11 +50,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
 
   function handleSave() {
     if (!title.trim()) {
-      setError('Ingresa un nombre para la clase.');
-      return;
-    }
-    if (!isValidTime(startTime) || !isValidTime(endTime)) {
-      setError('Las horas deben tener formato HH:MM (ej: 09:00).');
+      setError('Ingresá un nombre para la clase.');
       return;
     }
     if (!isEndAfterStart(startTime, endTime)) {
@@ -111,27 +108,11 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
             <View style={styles.timeRow}>
               <View style={styles.timeField}>
                 <Text style={styles.label}>Inicio</Text>
-                <TextInput
-                  style={styles.input}
-                  value={startTime}
-                  onChangeText={setStartTime}
-                  placeholder="09:00"
-                  placeholderTextColor={COLORS.textLight}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
-                />
+                <TimePickerField value={startTime} onChange={setStartTime} />
               </View>
               <View style={styles.timeField}>
                 <Text style={styles.label}>Fin</Text>
-                <TextInput
-                  style={styles.input}
-                  value={endTime}
-                  onChangeText={setEndTime}
-                  placeholder="10:00"
-                  placeholderTextColor={COLORS.textLight}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
-                />
+                <TimePickerField value={endTime} onChange={setEndTime} />
               </View>
             </View>
 
@@ -170,7 +151,7 @@ export default function EventFormModal({ visible, initialEvent, onClose, onSave,
             {isEditing && confirmingDelete && (
               <View style={styles.confirmBox}>
                 <Text style={styles.confirmText}>
-                  ¿Seguro que quieres eliminar "{initialEvent?.title}"?
+                  ¿Seguro que querés eliminar "{initialEvent?.title}"?
                 </Text>
                 <View style={styles.actionsRow}>
                   <Pressable

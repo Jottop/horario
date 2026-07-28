@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ClassEvent, DAYS_SHORT } from '../types';
+import { ClassEvent, DAYS_SHORT, DEFAULT_VISIBLE_DAYS } from '../types';
 import EventBlock from './EventBlock';
 import {
   COLORS,
@@ -13,31 +13,48 @@ import {
 interface Props {
   events: ClassEvent[];
   onEventPress: (event: ClassEvent) => void;
+  gridColor?: string;
+  backgroundColor?: string;
 }
 
-export default function WeekCalendar({ events, onEventPress }: Props) {
+export default function WeekCalendar({
+  events,
+  onEventPress,
+  gridColor = COLORS.gridLine,
+  backgroundColor = COLORS.background,
+}: Props) {
   const hours = useMemo(() => {
     const arr: number[] = [];
     for (let h = GRID_START_HOUR; h < GRID_END_HOUR; h++) arr.push(h);
     return arr;
   }, []);
 
+  // Lunes-Viernes siempre se muestran. Sábado/Domingo se agregan solo si
+  // hay al menos una clase cargada en ese día.
+  const visibleDayIndices = useMemo(() => {
+    const set = new Set<number>(DEFAULT_VISIBLE_DAYS);
+    events.forEach((e) => {
+      if (e.dayIndex === 5 || e.dayIndex === 6) set.add(e.dayIndex);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [events]);
+
   const screenWidth = Dimensions.get('window').width;
   const availableWidth = screenWidth - TIME_LABEL_WIDTH;
-  // Las 5 columnas siempre se ajustan al ancho disponible: nunca hace falta
-  // scrollear horizontalmente para ver Viernes.
-  const dayColumnWidth = availableWidth / DAYS_SHORT.length;
+  // Las columnas siempre se ajustan al ancho disponible: nunca hace falta
+  // scrollear horizontalmente para ver todos los días visibles.
+  const dayColumnWidth = availableWidth / visibleDayIndices.length;
   const gridHeight = (GRID_END_HOUR - GRID_START_HOUR) * HOUR_HEIGHT;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor }]}>
       {/* Encabezado de días */}
-      <View style={styles.headerRow}>
+      <View style={[styles.headerRow, { borderBottomColor: gridColor }]}>
         <View style={{ width: TIME_LABEL_WIDTH }} />
-        {DAYS_SHORT.map((day) => (
-          <View key={day} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
+        {visibleDayIndices.map((dayIndex) => (
+          <View key={dayIndex} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
             <Text style={styles.dayHeaderText} numberOfLines={1} adjustsFontSizeToFit>
-              {day}
+              {DAYS_SHORT[dayIndex]}
             </Text>
           </View>
         ))}
@@ -53,10 +70,22 @@ export default function WeekCalendar({ events, onEventPress }: Props) {
             ))}
           </View>
 
-          {DAYS_SHORT.map((day, dayIndex) => (
-            <View key={day} style={[styles.dayColumn, { width: dayColumnWidth, height: gridHeight }]}>
+          {visibleDayIndices.map((dayIndex) => (
+            <View
+              key={dayIndex}
+              style={[
+                styles.dayColumn,
+                { width: dayColumnWidth, height: gridHeight, borderLeftColor: gridColor },
+              ]}
+            >
               {hours.map((h) => (
-                <View key={h} style={[styles.hourLine, { top: (h - GRID_START_HOUR) * HOUR_HEIGHT }]} />
+                <View
+                  key={h}
+                  style={[
+                    styles.hourLine,
+                    { top: (h - GRID_START_HOUR) * HOUR_HEIGHT, backgroundColor: gridColor },
+                  ]}
+                />
               ))}
               {events
                 .filter((e) => e.dayIndex === dayIndex)
@@ -74,12 +103,10 @@ export default function WeekCalendar({ events, onEventPress }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   headerRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.gridLine,
     paddingBottom: 8,
   },
   dayHeaderCell: {
@@ -103,13 +130,11 @@ const styles = StyleSheet.create({
   dayColumn: {
     position: 'relative',
     borderLeftWidth: 1,
-    borderLeftColor: COLORS.gridLine,
   },
   hourLine: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: COLORS.gridLine,
   },
 });

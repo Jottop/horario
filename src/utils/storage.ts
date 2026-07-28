@@ -20,3 +20,28 @@ export async function saveEvents(events: ClassEvent[]): Promise<void> {
     console.error('Error al guardar eventos', e);
   }
 }
+
+export interface AppearanceSettings {
+  gridColor: string;
+  backgroundColor: string;
+}
+
+const APPEARANCE_KEY = '@study_calendar_appearance_v1';
+
+export async function loadAppearance(): Promise<AppearanceSettings | null> {
+  try {
+    const json = await AsyncStorage.getItem(APPEARANCE_KEY);
+    return json ? (JSON.parse(json) as AppearanceSettings) : null;
+  } catch (e) {
+    console.error('Error al cargar apariencia', e);
+    return null;
+  }
+}
+
+export async function saveAppearance(settings: AppearanceSettings): Promise<void> {
+  try {
+    await AsyncStorage.setItem(APPEARANCE_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Error al guardar apariencia', e);
+  }
+}
