@@ -21,8 +21,7 @@ export default function SideMenu({
 }: Props) {
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={styles.overlayTapArea} onPress={onClose} />
+      <View style={styles.overlay}>       
         <View style={styles.panel}>
           <ScrollView>
             <Text style={styles.title}>Menú</Text>
@@ -65,6 +64,7 @@ export default function SideMenu({
             <Text style={styles.closeButtonText}>Cerrar</Text>
           </Pressable>
         </View>
+        <Pressable style={styles.overlayTapArea} onPress={onClose} />
       </View>
     </Modal>
   );
