@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     paddingBottom: 8,
     paddingTop: 8,
   },
