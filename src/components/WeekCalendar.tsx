@@ -18,12 +18,10 @@ interface Props {
   backgroundColor?: string;
 }
 
-export default function WeekCalendar({
-  events,
-  onEventPress,
-  gridColor = COLORS.gridLine,
-  backgroundColor = COLORS.background,
-}: Props) {
+const WeekCalendar = React.forwardRef<View, Props>(function WeekCalendar(
+  { events, onEventPress, gridColor = COLORS.gridLine, backgroundColor = COLORS.background },
+  exportRef
+) {
   // La grilla arranca/termina en GRID_START_HOUR-GRID_END_HOUR por defecto, pero se
   // extiende si alguna clase empieza antes o termina después de ese rango.
   const { gridStartHour, gridEndHour } = useMemo(() => {
@@ -62,76 +60,101 @@ export default function WeekCalendar({
   const dayColumnWidth = availableWidth / visibleDayIndices.length;
   const gridHeight = (gridEndHour - gridStartHour) * HOUR_HEIGHT;
 
-  return (
-    <View style={[styles.container, { backgroundColor }]}>
-      {/* Encabezado de días */}
-      <View style={[styles.headerRow, { borderBottomColor: gridColor }]}>
-        <View style={{ width: TIME_LABEL_WIDTH }} />
-        {visibleDayIndices.map((dayIndex) => (
-          <View key={dayIndex} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
-            <Text style={[styles.dayHeaderText, { color: gridColor }]} numberOfLines={1} adjustsFontSizeToFit>
-              {DAYS_SHORT[dayIndex]}
-            </Text>
+  const headerContent = (
+    <View style={[styles.headerRow, { borderBottomColor: gridColor }]}>
+      <View style={{ width: TIME_LABEL_WIDTH }} />
+      {visibleDayIndices.map((dayIndex) => (
+        <View key={dayIndex} style={[styles.dayHeaderCell, { width: dayColumnWidth }]}>
+          <Text style={[styles.dayHeaderText, { color: gridColor }]} numberOfLines={1} adjustsFontSizeToFit>
+            {DAYS_SHORT[dayIndex]}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+
+  const gridContent = (
+    <View style={{ flexDirection: 'row' }}>
+      <View style={{ width: TIME_LABEL_WIDTH }}>
+        {hours.map((h) => (
+          <View key={h} style={[styles.hourLabelWrap, { height: HOUR_HEIGHT }]}>
+            <Text style={[styles.hourLabel, { color: gridColor }]}>{hourTo12(h)}</Text>
           </View>
         ))}
       </View>
 
-      <ScrollView>
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ width: TIME_LABEL_WIDTH }}>
-            {hours.map((h) => (
-              <View key={h} style={[styles.hourLabelWrap, { height: HOUR_HEIGHT }]}>
-                <Text style={[styles.hourLabel, { color: gridColor }]}>{hourTo12(h)}</Text>
-              </View>
+      {visibleDayIndices.map((dayIndex, i) => (
+        <View
+          key={dayIndex}
+          style={[
+            styles.dayColumn,
+            {
+              width: dayColumnWidth,
+              height: gridHeight,
+              borderLeftColor: gridColor,
+              borderBottomColor: gridColor,
+              ...(i === visibleDayIndices.length - 1
+                ? { borderRightWidth: 1, borderRightColor: gridColor }
+                : null),
+            },
+          ]}
+        >
+          {hours
+            .filter((h) => h !== gridStartHour)
+            .map((h) => (
+              <View
+                key={h}
+                style={[
+                  styles.hourLine,
+                  { top: (h - gridStartHour) * HOUR_HEIGHT, backgroundColor: gridColor },
+                ]}
+              />
             ))}
-          </View>
-
-          {visibleDayIndices.map((dayIndex, i) => (
-            <View
-              key={dayIndex}
-              style={[
-                styles.dayColumn,
-                {
-                  width: dayColumnWidth,
-                  height: gridHeight,
-                  borderLeftColor: gridColor,
-                  borderBottomColor: gridColor,
-                  ...(i === visibleDayIndices.length - 1
-                    ? { borderRightWidth: 1, borderRightColor: gridColor }
-                    : null),
-                },
-              ]}
-            >
-              {hours.map((h) => (
-                <View
-                  key={h}
-                  style={[
-                    styles.hourLine,
-                    { top: (h - gridStartHour) * HOUR_HEIGHT, backgroundColor: gridColor },
-                  ]}
-                />
-              ))}
-              {events
-                .filter((e) => e.dayIndex === dayIndex)
-                .map((event) => (
-                  <EventBlock
-                    key={event.id}
-                    event={event}
-                    onPress={() => onEventPress(event)}
-                    gridStartHour={gridStartHour}
-                  />
-                ))}
-            </View>
-          ))}
+          {events
+            .filter((e) => e.dayIndex === dayIndex)
+            .map((event) => (
+              <EventBlock
+                key={event.id}
+                event={event}
+                onPress={() => onEventPress(event)}
+                gridStartHour={gridStartHour}
+              />
+            ))}
         </View>
-      </ScrollView>
+      ))}
     </View>
   );
-}
+
+  return (
+    <View style={[styles.container, { backgroundColor }]}>
+      {/* Versión interactiva (en pantalla): encabezado fijo + grilla scrolleable */}
+      {headerContent}
+      <ScrollView>{gridContent}</ScrollView>
+
+      {/* Versión oculta, solo para "Capturar horario": mismo contenido pero sin
+          ScrollView (tamaño natural completo) y fuera de la pantalla visible, para
+          que la captura incluya la grilla entera sin recortes ni espacio de sobra,
+          sin importar si es más corta o más larga que la pantalla del celu. */}
+      <View style={styles.exportWrapper} pointerEvents="none">
+        <View ref={exportRef} collapsable={false} style={{ backgroundColor }}>
+          {headerContent}
+          {gridContent}
+        </View>
+      </View>
+    </View>
+  );
+});
+
+export default WeekCalendar;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  exportWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: -10000,
   },
   headerRow: {
     flexDirection: 'row',

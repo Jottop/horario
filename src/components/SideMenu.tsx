@@ -30,7 +30,7 @@ interface Props {
   onDeleteSchedule: (id: string) => void;
 }
 
-type MenuScreen = 'main' | 'colors' | 'schedules';
+type MenuScreen = 'main' | 'colors';
 
 const PANEL_WIDTH = Math.min(320, Dimensions.get('window').width * 0.78);
 
@@ -89,7 +89,6 @@ export default function SideMenu({
 
   function handleSwitch(id: string) {
     if (id !== activeScheduleId) onSwitchSchedule(id);
-    onClose();
   }
 
   function startRename(s: Schedule) {
@@ -117,51 +116,7 @@ export default function SideMenu({
               <>
                 <Text style={styles.title}>Menú</Text>
 
-                <Pressable style={styles.menuRow} onPress={() => setScreen('schedules')}>
-                  <Text style={styles.menuRowText}>Horarios</Text>
-                  <Text style={styles.chevron}>›</Text>
-                </Pressable>
-
-                <Pressable style={styles.menuRow} onPress={() => setScreen('colors')}>
-                  <Text style={styles.menuRowText}>Ajustar colores</Text>
-                  <Text style={styles.chevron}>›</Text>
-                </Pressable>
-
-                <Pressable style={styles.menuRow} onPress={onScreenshot}>
-                  <Text style={styles.menuRowText}>Capturar horario</Text>
-                </Pressable>
-
-                {!confirmingClear ? (
-                  <Pressable style={styles.menuRow} onPress={() => setConfirmingClear(true)}>
-                    <Text style={[styles.menuRowText, styles.dangerText]}>Limpiar horario</Text>
-                  </Pressable>
-                ) : (
-                  <View style={styles.confirmBox}>
-                    <Text style={styles.confirmText}>
-                      ¿Eliminar todas las clases del calendario? Esta acción no se puede deshacer.
-                    </Text>
-                    <View style={styles.confirmActionsRow}>
-                      <Pressable style={[styles.smallButton, styles.cancelButton]} onPress={() => setConfirmingClear(false)}>
-                        <Text style={styles.cancelButtonText}>Cancelar</Text>
-                      </Pressable>
-                      <Pressable style={[styles.smallButton, styles.dangerButton]} onPress={handleClearConfirm}>
-                        <Text style={styles.confirmButtonText}>Sí, limpiar</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
-
-            {screen === 'schedules' && (
-              <>
-                <Pressable style={styles.backRow} onPress={() => setScreen('main')}>
-                  <Text style={styles.chevronBack}>‹</Text>
-                  <Text style={styles.backText}>Menú</Text>
-                </Pressable>
-
-                <Text style={styles.title}>Horarios</Text>
-
+                <Text style={styles.sectionLabel}>Horarios</Text>
                 {schedules.map((s) => (
                   <View key={s.id} style={styles.scheduleBlock}>
                     {editingId === s.id ? (
@@ -187,7 +142,13 @@ export default function SideMenu({
                           <Text style={[styles.radioDot, s.id === activeScheduleId && { color: COLORS.primary }]}>
                             {s.id === activeScheduleId ? '●' : '○'}
                           </Text>
-                          <Text style={styles.scheduleName} numberOfLines={1}>
+                          <Text
+                            style={[
+                              styles.scheduleName,
+                              s.id === activeScheduleId && styles.scheduleNameActive,
+                            ]}
+                            numberOfLines={1}
+                          >
                             {s.name}
                           </Text>
                         </Pressable>
@@ -230,11 +191,12 @@ export default function SideMenu({
                 ))}
 
                 {!creatingNew ? (
-                  <Pressable style={styles.addScheduleButton} onPress={() => setCreatingNew(true)}>
-                    <Text style={styles.addScheduleButtonText}>+ Nuevo horario</Text>
+                  <Pressable style={styles.addScheduleRow} onPress={() => setCreatingNew(true)}>
+                    <Text style={styles.addScheduleIcon}>+</Text>
+                    <Text style={styles.addScheduleButtonText}>Crear nuevo horario</Text>
                   </Pressable>
                 ) : (
-                  <View style={[styles.inlineFormRow, { marginTop: 12 }]}>
+                  <View style={[styles.inlineFormRow, { marginTop: 4 }]}>
                     <TextInput
                       style={styles.inlineInput}
                       value={newScheduleName}
@@ -249,6 +211,37 @@ export default function SideMenu({
                     <Pressable onPress={() => setCreatingNew(false)} hitSlop={8}>
                       <Text style={[styles.inlineActionText, styles.inlineActionMuted]}>Cancelar</Text>
                     </Pressable>
+                  </View>
+                )}
+
+                <View style={styles.sectionDivider} />
+
+                <Pressable style={styles.menuRow} onPress={() => setScreen('colors')}>
+                  <Text style={styles.menuRowText}>Ajustar colores</Text>
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
+
+                <Pressable style={styles.menuRow} onPress={onScreenshot}>
+                  <Text style={styles.menuRowText}>Capturar horario</Text>
+                </Pressable>
+
+                {!confirmingClear ? (
+                  <Pressable style={styles.menuRow} onPress={() => setConfirmingClear(true)}>
+                    <Text style={[styles.menuRowText, styles.dangerText]}>Limpiar horario</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.confirmBox}>
+                    <Text style={styles.confirmText}>
+                      ¿Eliminar todas las clases del calendario? Esta acción no se puede deshacer.
+                    </Text>
+                    <View style={styles.confirmActionsRow}>
+                      <Pressable style={[styles.smallButton, styles.cancelButton]} onPress={() => setConfirmingClear(false)}>
+                        <Text style={styles.cancelButtonText}>Cancelar</Text>
+                      </Pressable>
+                      <Pressable style={[styles.smallButton, styles.dangerButton]} onPress={handleClearConfirm}>
+                        <Text style={styles.confirmButtonText}>Sí, limpiar</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 )}
               </>
@@ -344,6 +337,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
     marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: COLORS.gridLine,
+    marginVertical: 16,
   },
   menuRow: {
     flexDirection: 'row',
@@ -462,6 +468,10 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: '500',
   },
+  scheduleNameActive: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
   iconButton: {
     fontSize: 16,
     color: COLORS.textLight,
@@ -493,17 +503,22 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontWeight: '600',
   },
-  addScheduleButton: {
-    marginTop: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+  addScheduleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+  },
+  addScheduleIcon: {
+    fontSize: 18,
+    color: COLORS.primary,
+    width: 18,
+    textAlign: 'center',
   },
   addScheduleButtonText: {
     color: COLORS.primary,
     fontWeight: '600',
+    fontSize: 15,
   },
   confirmBox: {
     marginTop: 4,

@@ -5,9 +5,10 @@ agregar, editar y eliminar horarios, con persistencia local en el dispositivo.
 
 ## Funcionalidades
 
-- **Múltiples horarios completos e independientes** (ej: "Semestre A", "Semestre B"): desde
-  el menú lateral > **Horarios** podés crear uno nuevo, cambiar entre ellos, renombrarlos o
-  eliminarlos. El título de la app muestra el nombre del horario activo.
+- **Múltiples horarios completos e independientes** (ej: "Semestre A", "Semestre B"): se ven
+  como una sección directa en el menú principal (ícono ☰), donde podés tocar uno para
+  cambiarte, tocar ✎ para renombrarlo, 🗑 para eliminarlo, o "Crear nuevo horario" para
+  sumar uno más. El título de la app muestra el nombre del horario activo.
 - Grilla semanal de 09:00 a 18:00 por defecto. Si una clase empieza antes o termina
   después de ese rango, la grilla se extiende automáticamente para mostrarla completa.
   Lunes a Viernes se muestran siempre; Sábado y Domingo aparecen automáticamente en cuanto
@@ -19,13 +20,16 @@ agregar, editar y eliminar horarios, con persistencia local en el dispositivo.
 - Tocar un bloque existente para editarlo o eliminarlo.
 - No se permite crear una clase que se superponga en horario con otra ya existente el mismo día.
 - Menú lateral (ícono ☰ arriba a la izquierda, se abre desde la izquierda) con:
-  - **Horarios**: crear, cambiar, renombrar o eliminar horarios completos independientes.
+  - **Horarios** (sección directa, arriba de todo): tocar uno para cambiarte, ✎ para
+    renombrar, 🗑 para eliminar, "Crear nuevo horario" para sumar otro.
   - **Ajustar colores**: 6 colores pastel predefinidos (pensados para combinar entre sí) para
     las líneas de la grilla y para el fondo del calendario, con vista previa en vivo y botón
     para restablecer los colores originales. El título de la app y los nombres de los días
     cambian junto con el color de grilla elegido.
-  - **Capturar horario**: genera una imagen limpia solo de la grilla del calendario (sin
-    encabezado ni botones) y la guarda directo en la galería del dispositivo.
+  - **Capturar horario**: genera una imagen limpia de toda la grilla del calendario (día y
+    horas incluidos, sin encabezado de app ni botones), ajustada exactamente al contenido
+    real (sin espacio de sobra si la grilla es corta, ni recortes si es más larga que la
+    pantalla), y la guarda directo en la galería del dispositivo.
   - **Limpiar horario**: elimina todas las clases del horario activo (con confirmación).
 - Los datos se guardan automáticamente en el dispositivo (AsyncStorage), no se pierden al cerrar la app.
 

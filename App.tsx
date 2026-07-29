@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import ViewShot from 'react-native-view-shot';
+import { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import WeekCalendar from './src/components/WeekCalendar';
 import EventFormModal from './src/components/EventFormModal';
@@ -31,7 +31,7 @@ function AppContent() {
   const [gridColor, setGridColor] = useState(DEFAULT_APPEARANCE.gridColor);
   const [backgroundColor, setBackgroundColor] = useState(DEFAULT_APPEARANCE.backgroundColor);
   const isFirstRun = useRef(true);
-  const calendarShotRef = useRef<ViewShot>(null);
+  const calendarShotRef = useRef<View>(null);
 
   const activeSchedule = schedules.find((s) => s.id === activeScheduleId) ?? null;
   const events = activeSchedule?.events ?? [];
@@ -162,7 +162,7 @@ function AppContent() {
           Alert.alert('Permiso necesario', 'Necesitamos acceso a tu galería para guardar la captura.');
           return;
         }
-        const uri = await calendarShotRef.current?.capture?.();
+        const uri = await captureRef(calendarShotRef, { format: 'png', quality: 1 });
         if (!uri) return;
         await MediaLibrary.saveToLibraryAsync(uri);
         Alert.alert('Listo', 'La captura del horario se guardó en tu galería.');
@@ -186,14 +186,13 @@ function AppContent() {
         <View style={styles.menuButton} />
       </View>
 
-      <ViewShot ref={calendarShotRef} options={{ format: 'png', quality: 1 }} style={{ flex: 1 }}>
-        <WeekCalendar
-          events={events}
-          onEventPress={handleEventPress}
-          gridColor={gridColor}
-          backgroundColor={backgroundColor}
-        />
-      </ViewShot>
+      <WeekCalendar
+        ref={calendarShotRef}
+        events={events}
+        onEventPress={handleEventPress}
+        gridColor={gridColor}
+        backgroundColor={backgroundColor}
+      />
 
       <Pressable style={styles.fab} onPress={handleAddPress}>
         <Text style={styles.fabText}>+</Text>
