@@ -10,6 +10,7 @@ interface Props {
   onChangeGridColor: (color: string) => void;
   onChangeBackgroundColor: (color: string) => void;
   onClearAll: () => void;
+  onScreenshot: () => void;
 }
 
 type MenuScreen = 'main' | 'colors';
@@ -24,6 +25,7 @@ export default function SideMenu({
   onChangeGridColor,
   onChangeBackgroundColor,
   onClearAll,
+  onScreenshot,
 }: Props) {
   const [rendered, setRendered] = useState(false);
   const [screen, setScreen] = useState<MenuScreen>('main');
@@ -66,6 +68,10 @@ export default function SideMenu({
                 <Pressable style={styles.menuRow} onPress={() => setScreen('colors')}>
                   <Text style={styles.menuRowText}>Ajustar colores</Text>
                   <Text style={styles.chevron}>›</Text>
+                </Pressable>
+
+                <Pressable style={styles.menuRow} onPress={onScreenshot}>
+                  <Text style={styles.menuRowText}>Capturar horario</Text>
                 </Pressable>
 
                 {!confirmingClear ? (
@@ -129,6 +135,22 @@ export default function SideMenu({
                 <Pressable style={styles.resetButton} onPress={handleResetColors}>
                   <Text style={styles.resetButtonText}>Restablecer colores</Text>
                 </Pressable>
+
+                <Text style={[styles.label, { marginTop: 20 }]}>Vista previa</Text>
+                <View style={[styles.previewBox, { backgroundColor, borderColor: gridColor }]}>
+                  {[0.25, 0.5, 0.75].map((f) => (
+                    <View
+                      key={`h-${f}`}
+                      style={[styles.previewHLine, { top: `${f * 100}%`, backgroundColor: gridColor }]}
+                    />
+                  ))}
+                  {[1 / 3, 2 / 3].map((f) => (
+                    <View
+                      key={`v-${f}`}
+                      style={[styles.previewVLine, { left: `${f * 100}%`, backgroundColor: gridColor }]}
+                    />
+                  ))}
+                </View>
               </>
             )}
           </ScrollView>
@@ -235,6 +257,25 @@ const styles = StyleSheet.create({
   resetButtonText: {
     color: COLORS.text,
     fontWeight: '600',
+  },
+  previewBox: {
+    height: 110,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  previewHLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+  },
+  previewVLine: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
   },
   confirmBox: {
     marginTop: 4,

@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import WeekCalendar from './src/components/WeekCalendar';
 import EventFormModal from './src/components/EventFormModal';
 import SideMenu from './src/components/SideMenu';
@@ -19,6 +21,7 @@ function AppContent() {
   const [gridColor, setGridColor] = useState(DEFAULT_APPEARANCE.gridColor);
   const [backgroundColor, setBackgroundColor] = useState(DEFAULT_APPEARANCE.backgroundColor);
   const isFirstRun = useRef(true);
+  const calendarShotRef = useRef<ViewShot>(null);
 
   // Cargar eventos y apariencia guardados al iniciar (o usar valores por defecto la primera vez)
   useEffect(() => {
@@ -79,6 +82,24 @@ function AppContent() {
     setEvents([]);
   }
 
+  function handleScreenshot() {
+    setMenuVisible(false);
+    // Se espera a que el menú termine de cerrarse antes de capturar,
+    // para que no quede ni un resto de su animación en la imagen.
+    setTimeout(async () => {
+      try {
+        const uri = await calendarShotRef.current?.capture?.();
+        if (!uri) return;
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Guardar horario' });
+        }
+      } catch (e) {
+        console.error('Error al capturar el horario', e);
+      }
+    }, 300);
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
@@ -90,12 +111,14 @@ function AppContent() {
         <View style={styles.menuButton} />
       </View>
 
-      <WeekCalendar
-        events={events}
-        onEventPress={handleEventPress}
-        gridColor={gridColor}
-        backgroundColor={backgroundColor}
-      />
+      <ViewShot ref={calendarShotRef} options={{ format: 'png', quality: 1 }} style={{ flex: 1 }}>
+        <WeekCalendar
+          events={events}
+          onEventPress={handleEventPress}
+          gridColor={gridColor}
+          backgroundColor={backgroundColor}
+        />
+      </ViewShot>
 
       <Pressable style={styles.fab} onPress={handleAddPress}>
         <Text style={styles.fabText}>+</Text>
@@ -118,6 +141,7 @@ function AppContent() {
         onChangeGridColor={setGridColor}
         onChangeBackgroundColor={setBackgroundColor}
         onClearAll={handleClearAll}
+        onScreenshot={handleScreenshot}
       />
     </SafeAreaView>
   );
