@@ -81,7 +81,7 @@ export default function WeekCalendar({
           <View style={{ width: TIME_LABEL_WIDTH }}>
             {hours.map((h) => (
               <View key={h} style={[styles.hourLabelWrap, { height: HOUR_HEIGHT }]}>
-                <Text style={styles.hourLabel}>{h}</Text>
+                <Text style={[styles.hourLabel, { color: gridColor, fontWeight: 'bold' }]}>{h}</Text>
               </View>
             ))}
           </View>
