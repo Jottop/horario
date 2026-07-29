@@ -41,6 +41,7 @@ export default function TimePickerField({ value, onChange }: Props) {
         <DateTimePicker
           value={timeStringToDate(value)}
           mode="time"
+          is24Hour={true}
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={handleChange}
         />

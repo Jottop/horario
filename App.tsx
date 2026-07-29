@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import ViewShot from 'react-native-view-shot';
-import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 import WeekCalendar from './src/components/WeekCalendar';
 import EventFormModal from './src/components/EventFormModal';
 import SideMenu from './src/components/SideMenu';
@@ -88,14 +88,18 @@ function AppContent() {
     // para que no quede ni un resto de su animación en la imagen.
     setTimeout(async () => {
       try {
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso necesario', 'Necesitamos acceso a tu galería para guardar la captura.');
+          return;
+        }
         const uri = await calendarShotRef.current?.capture?.();
         if (!uri) return;
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Guardar horario' });
-        }
+        await MediaLibrary.saveToLibraryAsync(uri);
+        Alert.alert('Listo', 'La captura del horario se guardó en tu galería.');
       } catch (e) {
         console.error('Error al capturar el horario', e);
+        Alert.alert('Error', 'No se pudo guardar la captura.');
       }
     }, 300);
   }

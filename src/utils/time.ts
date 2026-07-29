@@ -18,9 +18,9 @@ export function minutesToTime(minutes: number): string {
 }
 
 /** Distancia en px desde el borde superior de la grilla hasta el inicio del evento */
-export function getEventTop(startTime: string): number {
+export function getEventTop(startTime: string, gridStartHour: number = GRID_START_HOUR): number {
   const startMinutes = timeToMinutes(startTime);
-  const gridStartMinutes = GRID_START_HOUR * 60;
+  const gridStartMinutes = gridStartHour * 60;
   return ((startMinutes - gridStartMinutes) / 60) * HOUR_HEIGHT;
 }
 
@@ -30,15 +30,9 @@ export function getEventHeight(startTime: string, endTime: string): number {
   return Math.max((duration / 60) * HOUR_HEIGHT, 28);
 }
 
-/** Convierte "14:30" en "2:30 PM" para mostrar en los bloques */
+/** Devuelve la hora en formato 24h tal cual ("14:30"), sin convertir a 12h/AM-PM */
 export function formatDisplayTime(time: string): string {
-  if (!isValidTime(time)) return time;
-  const [hStr, m] = time.split(':');
-  let h = parseInt(hStr, 10);
-  const period = h >= 12 ? 'PM' : 'AM';
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${m} ${period}`;
+  return isValidTime(time) ? time.trim() : time;
 }
 
 export function isEndAfterStart(startTime: string, endTime: string): boolean {

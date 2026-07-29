@@ -21,9 +21,11 @@ export const PALETTE = [
   '#D8C7F2', // lavanda
 ];
 
-// Layout de la grilla horaria
-export const GRID_START_HOUR = 7; // 07:00
-export const GRID_END_HOUR = 22; // 22:00
+// Layout de la grilla horaria. Estos son los límites POR DEFECTO: si una clase empieza
+// antes de GRID_START_HOUR o termina después de GRID_END_HOUR, WeekCalendar extiende
+// la grilla dinámicamente para que esa clase se vea completa.
+export const GRID_START_HOUR = 9; // 09:00
+export const GRID_END_HOUR = 21; // 21:00
 export const HOUR_HEIGHT = 60; // px por hora
 export const TIME_LABEL_WIDTH = 28; // px
 

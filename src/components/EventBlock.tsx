@@ -7,10 +7,11 @@ import { COLORS } from '../constants/theme';
 interface Props {
   event: ClassEvent;
   onPress: () => void;
+  gridStartHour: number;
 }
 
-export default function EventBlock({ event, onPress }: Props) {
-  const top = getEventTop(event.startTime);
+export default function EventBlock({ event, onPress, gridStartHour }: Props) {
+  const top = getEventTop(event.startTime, gridStartHour);
   const height = getEventHeight(event.startTime, event.endTime);
   const compact = height < 56;
 

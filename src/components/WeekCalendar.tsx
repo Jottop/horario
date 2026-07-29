@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ClassEvent, DAYS_SHORT, DEFAULT_VISIBLE_DAYS } from '../types';
 import EventBlock from './EventBlock';
+import { timeToMinutes } from '../utils/time';
 import {
   COLORS,
   GRID_START_HOUR,
@@ -23,11 +24,25 @@ export default function WeekCalendar({
   gridColor = COLORS.gridLine,
   backgroundColor = COLORS.background,
 }: Props) {
+  // La grilla arranca/termina en GRID_START_HOUR-GRID_END_HOUR por defecto, pero se
+  // extiende si alguna clase empieza antes o termina después de ese rango.
+  const { gridStartHour, gridEndHour } = useMemo(() => {
+    let start = GRID_START_HOUR;
+    let end = GRID_END_HOUR;
+    events.forEach((e) => {
+      const startHour = Math.floor(timeToMinutes(e.startTime) / 60);
+      const endHour = Math.ceil(timeToMinutes(e.endTime) / 60);
+      if (startHour < start) start = startHour;
+      if (endHour > end) end = endHour;
+    });
+    return { gridStartHour: start, gridEndHour: end };
+  }, [events]);
+
   const hours = useMemo(() => {
     const arr: number[] = [];
-    for (let h = GRID_START_HOUR; h < GRID_END_HOUR; h++) arr.push(h);
+    for (let h = gridStartHour; h < gridEndHour; h++) arr.push(h);
     return arr;
-  }, []);
+  }, [gridStartHour, gridEndHour]);
 
   // Lunes-Viernes siempre se muestran. Sábado se agrega si tiene alguna clase,
   // o si Domingo tiene alguna clase (Domingo "arrastra" a Sábado, pero no al revés).
@@ -45,7 +60,7 @@ export default function WeekCalendar({
   // Las columnas siempre se ajustan al ancho disponible: nunca hace falta
   // scrollear horizontalmente para ver todos los días visibles.
   const dayColumnWidth = availableWidth / visibleDayIndices.length;
-  const gridHeight = (GRID_END_HOUR - GRID_START_HOUR) * HOUR_HEIGHT;
+  const gridHeight = (gridEndHour - gridStartHour) * HOUR_HEIGHT;
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -84,14 +99,19 @@ export default function WeekCalendar({
                   key={h}
                   style={[
                     styles.hourLine,
-                    { top: (h - GRID_START_HOUR) * HOUR_HEIGHT, backgroundColor: gridColor },
+                    { top: (h - gridStartHour) * HOUR_HEIGHT, backgroundColor: gridColor },
                   ]}
                 />
               ))}
               {events
                 .filter((e) => e.dayIndex === dayIndex)
                 .map((event) => (
-                  <EventBlock key={event.id} event={event} onPress={() => onEventPress(event)} />
+                  <EventBlock
+                    key={event.id}
+                    event={event}
+                    onPress={() => onEventPress(event)}
+                    gridStartHour={gridStartHour}
+                  />
                 ))}
             </View>
           ))}
