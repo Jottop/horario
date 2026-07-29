@@ -137,6 +137,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     paddingBottom: 8,
+    paddingTop: 8,
   },
   dayHeaderCell: {
     alignItems: 'center',
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   hourLabel: {
-    fontSize: 14,
+    fontSize: 11,
     color: COLORS.textLight,
   },
   dayColumn: {

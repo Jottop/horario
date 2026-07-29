@@ -5,19 +5,28 @@ agregar, editar y eliminar horarios, con persistencia local en el dispositivo.
 
 ## Funcionalidades
 
-- Grilla semanal de 07:00 a 22:00. Lunes a Viernes se muestran siempre; Sábado y
-  Domingo aparecen automáticamente en cuanto agregás una clase en esos días.
-- Tocar el botón **+** para agregar una nueva clase (nombre, día, hora de inicio/fin, color).
-- Selector de hora nativo en vez de escribir la hora a mano.
+- **Múltiples horarios completos e independientes** (ej: "Semestre A", "Semestre B"): desde
+  el menú lateral > **Horarios** podés crear uno nuevo, cambiar entre ellos, renombrarlos o
+  eliminarlos. El título de la app muestra el nombre del horario activo.
+- Grilla semanal de 09:00 a 18:00 por defecto. Si una clase empieza antes o termina
+  después de ese rango, la grilla se extiende automáticamente para mostrarla completa.
+  Lunes a Viernes se muestran siempre; Sábado y Domingo aparecen automáticamente en cuanto
+  agregás una clase en esos días.
+- Tocar el botón **+** para agregar una nueva clase (nombre, día, hora de inicio/fin, color),
+  con la posibilidad de agregar varios horarios (día+hora) a esa misma clase de una vez.
+- Selector de hora nativo en formato 24hrs (no se convierte a AM/PM en ningún lado de la app).
+  Los números del costado izquierdo de la grilla sí se muestran en formato 12hrs (1-12).
 - Tocar un bloque existente para editarlo o eliminarlo.
+- No se permite crear una clase que se superponga en horario con otra ya existente el mismo día.
 - Menú lateral (ícono ☰ arriba a la izquierda, se abre desde la izquierda) con:
+  - **Horarios**: crear, cambiar, renombrar o eliminar horarios completos independientes.
   - **Ajustar colores**: 6 colores pastel predefinidos (pensados para combinar entre sí) para
-    las líneas de la grilla y para el fondo del calendario, con botón para restablecer los
-    colores originales. El título "Mi Horario Semanal" y los nombres de los días cambian
-    junto con el color de grilla elegido.
+    las líneas de la grilla y para el fondo del calendario, con vista previa en vivo y botón
+    para restablecer los colores originales. El título de la app y los nombres de los días
+    cambian junto con el color de grilla elegido.
   - **Capturar horario**: genera una imagen limpia solo de la grilla del calendario (sin
-    encabezado ni botones) y abre el selector nativo para guardarla o compartirla.
-  - **Limpiar horario**: elimina todas las clases del calendario (con confirmación).
+    encabezado ni botones) y la guarda directo en la galería del dispositivo.
+  - **Limpiar horario**: elimina todas las clases del horario activo (con confirmación).
 - Los datos se guardan automáticamente en el dispositivo (AsyncStorage), no se pierden al cerrar la app.
 
 ## Requisitos
@@ -44,7 +53,7 @@ npx expo install --fix
 dependencias con `expo install` (así queda resuelta la versión correcta para tu SDK,
 en vez de fijarla a mano):
 ```bash
-npx expo install react-native-view-shot expo-sharing
+npx expo install react-native-view-shot expo-media-library
 ```
 
 ## Ejecución
@@ -62,19 +71,20 @@ Esto abre Metro/Expo. Desde ahí podés:
 
 ```
 StudyCalendarApp/
-├── App.tsx                        # Componente raíz: carga/guarda datos, arma la pantalla
+├── App.tsx                        # Componente raíz: maneja los horarios, carga/guarda datos, arma la pantalla
 ├── src/
-│   ├── types.ts                   # Tipo ClassEvent, días de la semana (7) y días visibles por defecto
+│   ├── types.ts                   # Tipos ClassEvent y Schedule, días de la semana (7) y días visibles por defecto
 │   ├── constants/theme.ts         # Colores, paleta, opciones de apariencia y medidas de la grilla
 │   ├── utils/time.ts              # Conversión de horas, posicionamiento y detección de solapamiento
-│   ├── utils/storage.ts           # Guardar/cargar eventos y apariencia con AsyncStorage
+│   ├── utils/storage.ts           # Guardar/cargar horarios (Schedule[]), horario activo y apariencia
+│   ├── utils/id.ts                # Generador simple de IDs únicos
 │   ├── data/seedEvents.ts         # Datos iniciales (vacío: [] por defecto)
 │   └── components/
-│       ├── WeekCalendar.tsx       # Grilla semanal (días dinámicos + horas + eventos)
+│       ├── WeekCalendar.tsx       # Grilla semanal (días/horas dinámicos + eventos)
 │       ├── EventBlock.tsx         # Bloque visual de una clase
 │       ├── EventFormModal.tsx     # Formulario modal (múltiples horarios por clase, validación de solapamiento)
 │       ├── TimePickerField.tsx    # Selector de hora nativo
-│       └── SideMenu.tsx           # Menú lateral (Ajustar colores, Capturar horario, Limpiar horario)
+│       └── SideMenu.tsx           # Menú lateral (Horarios, Ajustar colores, Capturar horario, Limpiar horario)
 ```
 
 ## Personalizar
