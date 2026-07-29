@@ -11,6 +11,13 @@ export interface ClassEvent {
   color: string;
 }
 
+/** Un horario semanal completo e independiente (ej: "Semestre A", "Semestre B") */
+export interface Schedule {
+  id: string;
+  name: string;
+  events: ClassEvent[];
+}
+
 // Los 7 días están disponibles al crear una clase (Sábado y Domingo incluidos),
 // pero el calendario solo muestra Lunes-Viernes por defecto (ver DEFAULT_VISIBLE_DAYS).
 // Sábado/Domingo aparecen automáticamente en la grilla en cuanto haya una clase ahí.

@@ -7,13 +7,23 @@ import * as MediaLibrary from 'expo-media-library';
 import WeekCalendar from './src/components/WeekCalendar';
 import EventFormModal from './src/components/EventFormModal';
 import SideMenu from './src/components/SideMenu';
-import { ClassEvent } from './src/types';
-import { loadEvents, saveEvents, loadAppearance, saveAppearance } from './src/utils/storage';
+import { ClassEvent, Schedule } from './src/types';
+import {
+  loadSchedules,
+  saveSchedules,
+  loadActiveScheduleId,
+  saveActiveScheduleId,
+  loadLegacyEvents,
+  loadAppearance,
+  saveAppearance,
+} from './src/utils/storage';
 import { seedEvents } from './src/data/seedEvents';
 import { COLORS, DEFAULT_APPEARANCE } from './src/constants/theme';
+import { makeId } from './src/utils/id';
 
 function AppContent() {
-  const [events, setEvents] = useState<ClassEvent[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [activeScheduleId, setActiveScheduleId] = useState<string>('');
   const [loaded, setLoaded] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ClassEvent | null>(null);
@@ -23,11 +33,35 @@ function AppContent() {
   const isFirstRun = useRef(true);
   const calendarShotRef = useRef<ViewShot>(null);
 
-  // Cargar eventos y apariencia guardados al iniciar (o usar valores por defecto la primera vez)
+  const activeSchedule = schedules.find((s) => s.id === activeScheduleId) ?? null;
+  const events = activeSchedule?.events ?? [];
+
+  // Cargar horarios y apariencia guardados al iniciar. Si no hay horarios (primera vez,
+  // o versión anterior de la app que guardaba un único horario sin nombre), se migran
+  // esos datos a un horario nuevo llamado "Mi Horario" para no perder nada.
   useEffect(() => {
     (async () => {
-      const [storedEvents, storedAppearance] = await Promise.all([loadEvents(), loadAppearance()]);
-      setEvents(storedEvents ?? seedEvents);
+      const [storedSchedules, storedActiveId, storedAppearance] = await Promise.all([
+        loadSchedules(),
+        loadActiveScheduleId(),
+        loadAppearance(),
+      ]);
+
+      if (storedSchedules && storedSchedules.length > 0) {
+        setSchedules(storedSchedules);
+        const activeStillExists = storedSchedules.some((s) => s.id === storedActiveId);
+        setActiveScheduleId(activeStillExists ? storedActiveId! : storedSchedules[0].id);
+      } else {
+        const legacyEvents = await loadLegacyEvents();
+        const initialSchedule: Schedule = {
+          id: makeId('sched'),
+          name: 'Mi Horario',
+          events: legacyEvents ?? seedEvents,
+        };
+        setSchedules([initialSchedule]);
+        setActiveScheduleId(initialSchedule.id);
+      }
+
       if (storedAppearance) {
         setGridColor(storedAppearance.gridColor);
         setBackgroundColor(storedAppearance.backgroundColor);
@@ -36,21 +70,29 @@ function AppContent() {
     })();
   }, []);
 
-  // Guardar eventos cada vez que cambian (evita guardar en el primer render)
+  // Guardar horarios y el horario activo cada vez que cambian (evita guardar en el primer render)
   useEffect(() => {
     if (!loaded) return;
     if (isFirstRun.current) {
       isFirstRun.current = false;
       return;
     }
-    saveEvents(events);
-  }, [events, loaded]);
+    saveSchedules(schedules);
+    saveActiveScheduleId(activeScheduleId);
+  }, [schedules, activeScheduleId, loaded]);
 
   // Guardar apariencia cada vez que cambia
   useEffect(() => {
     if (!loaded) return;
     saveAppearance({ gridColor, backgroundColor });
   }, [gridColor, backgroundColor, loaded]);
+
+  /** Aplica una transformación a la lista de clases del horario actualmente activo */
+  function updateActiveEvents(updater: (prev: ClassEvent[]) => ClassEvent[]) {
+    setSchedules((prev) =>
+      prev.map((s) => (s.id === activeScheduleId ? { ...s, events: updater(s.events) } : s))
+    );
+  }
 
   function handleAddPress() {
     setEditingEvent(null);
@@ -63,7 +105,7 @@ function AppContent() {
   }
 
   function handleSave(newEvents: ClassEvent[]) {
-    setEvents((prev) => {
+    updateActiveEvents((prev) => {
       // Los ids que ya existían en prev corresponden a horarios editados (se reemplazan);
       // los ids nuevos corresponden a horarios agregados (se suman).
       const incomingIds = new Set(newEvents.map((e) => e.id));
@@ -74,12 +116,39 @@ function AppContent() {
   }
 
   function handleDelete(id: string) {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+    updateActiveEvents((prev) => prev.filter((e) => e.id !== id));
     setModalVisible(false);
   }
 
   function handleClearAll() {
-    setEvents([]);
+    updateActiveEvents(() => []);
+  }
+
+  function handleSwitchSchedule(id: string) {
+    setActiveScheduleId(id);
+  }
+
+  function handleCreateSchedule(name: string) {
+    const newSchedule: Schedule = { id: makeId('sched'), name: name.trim() || 'Nuevo horario', events: [] };
+    setSchedules((prev) => [...prev, newSchedule]);
+    setActiveScheduleId(newSchedule.id);
+  }
+
+  function handleRenameSchedule(id: string, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setSchedules((prev) => prev.map((s) => (s.id === id ? { ...s, name: trimmed } : s)));
+  }
+
+  function handleDeleteSchedule(id: string) {
+    setSchedules((prev) => {
+      const remaining = prev.filter((s) => s.id !== id);
+      if (remaining.length === 0) return prev; // nunca se borra el último horario
+      if (id === activeScheduleId) {
+        setActiveScheduleId(remaining[0].id);
+      }
+      return remaining;
+    });
   }
 
   function handleScreenshot() {
@@ -111,7 +180,9 @@ function AppContent() {
         <Pressable style={styles.menuButton} onPress={() => setMenuVisible(true)} hitSlop={12}>
           <Text style={styles.menuIcon}>☰</Text>
         </Pressable>
-        <Text style={[styles.title, { color: gridColor }]}>Mi Horario Semanal</Text>
+        <Text style={[styles.title, { color: gridColor }]} numberOfLines={1}>
+          {activeSchedule?.name ?? 'Mi Horario Semanal'}
+        </Text>
         <View style={styles.menuButton} />
       </View>
 
@@ -146,6 +217,12 @@ function AppContent() {
         onChangeBackgroundColor={setBackgroundColor}
         onClearAll={handleClearAll}
         onScreenshot={handleScreenshot}
+        schedules={schedules}
+        activeScheduleId={activeScheduleId}
+        onSwitchSchedule={handleSwitchSchedule}
+        onCreateSchedule={handleCreateSchedule}
+        onRenameSchedule={handleRenameSchedule}
+        onDeleteSchedule={handleDeleteSchedule}
       />
     </SafeAreaView>
   );
@@ -182,6 +259,8 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   title: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 20,
     fontWeight: '700',
     color: COLORS.text,

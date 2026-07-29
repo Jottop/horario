@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ClassEvent, DAYS_SHORT, DEFAULT_VISIBLE_DAYS } from '../types';
 import EventBlock from './EventBlock';
-import { timeToMinutes } from '../utils/time';
+import { timeToMinutes, hourTo12 } from '../utils/time';
 import {
   COLORS,
   GRID_START_HOUR,
@@ -81,17 +81,25 @@ export default function WeekCalendar({
           <View style={{ width: TIME_LABEL_WIDTH }}>
             {hours.map((h) => (
               <View key={h} style={[styles.hourLabelWrap, { height: HOUR_HEIGHT }]}>
-                <Text style={[styles.hourLabel, { color: gridColor, fontWeight: 'bold' }]}>{h}</Text>
+                <Text style={[styles.hourLabel, { color: gridColor, fontWeight: 'bold' }]}>{hourTo12(h)}</Text>
               </View>
             ))}
           </View>
 
-          {visibleDayIndices.map((dayIndex) => (
+          {visibleDayIndices.map((dayIndex, i) => (
             <View
               key={dayIndex}
               style={[
                 styles.dayColumn,
-                { width: dayColumnWidth, height: gridHeight, borderLeftColor: gridColor },
+                {
+                  width: dayColumnWidth,
+                  height: gridHeight,
+                  borderLeftColor: gridColor,
+                  borderBottomColor: gridColor,
+                  ...(i === visibleDayIndices.length - 1
+                    ? { borderRightWidth: 1, borderRightColor: gridColor }
+                    : null),
+                },
               ]}
             >
               {hours.map((h) => (
@@ -144,12 +152,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   hourLabel: {
-    fontSize: 11,
+    fontSize: 14,
     color: COLORS.textLight,
   },
   dayColumn: {
     position: 'relative',
     borderLeftWidth: 1,
+    borderBottomWidth: 1,
   },
   hourLine: {
     position: 'absolute',

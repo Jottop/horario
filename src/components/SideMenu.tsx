@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { Schedule } from '../types';
 import { COLORS, DEFAULT_APPEARANCE, GRID_COLOR_OPTIONS, BACKGROUND_COLOR_OPTIONS } from '../constants/theme';
 
 interface Props {
@@ -11,9 +22,15 @@ interface Props {
   onChangeBackgroundColor: (color: string) => void;
   onClearAll: () => void;
   onScreenshot: () => void;
+  schedules: Schedule[];
+  activeScheduleId: string;
+  onSwitchSchedule: (id: string) => void;
+  onCreateSchedule: (name: string) => void;
+  onRenameSchedule: (id: string, name: string) => void;
+  onDeleteSchedule: (id: string) => void;
 }
 
-type MenuScreen = 'main' | 'colors';
+type MenuScreen = 'main' | 'colors' | 'schedules';
 
 const PANEL_WIDTH = Math.min(320, Dimensions.get('window').width * 0.78);
 
@@ -26,10 +43,21 @@ export default function SideMenu({
   onChangeBackgroundColor,
   onClearAll,
   onScreenshot,
+  schedules,
+  activeScheduleId,
+  onSwitchSchedule,
+  onCreateSchedule,
+  onRenameSchedule,
+  onDeleteSchedule,
 }: Props) {
   const [rendered, setRendered] = useState(false);
   const [screen, setScreen] = useState<MenuScreen>('main');
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [newScheduleName, setNewScheduleName] = useState('');
   const translateX = useRef(new Animated.Value(-PANEL_WIDTH)).current;
 
   useEffect(() => {
@@ -37,6 +65,9 @@ export default function SideMenu({
       setRendered(true);
       setScreen('main');
       setConfirmingClear(false);
+      setConfirmingDeleteId(null);
+      setEditingId(null);
+      setCreatingNew(false);
       Animated.timing(translateX, { toValue: 0, duration: 240, useNativeDriver: true }).start();
     } else if (rendered) {
       Animated.timing(translateX, { toValue: -PANEL_WIDTH, duration: 200, useNativeDriver: true }).start(() => {
@@ -56,6 +87,27 @@ export default function SideMenu({
     onChangeBackgroundColor(DEFAULT_APPEARANCE.backgroundColor);
   }
 
+  function handleSwitch(id: string) {
+    if (id !== activeScheduleId) onSwitchSchedule(id);
+    onClose();
+  }
+
+  function startRename(s: Schedule) {
+    setEditingId(s.id);
+    setEditingName(s.name);
+  }
+
+  function confirmRename() {
+    if (editingId) onRenameSchedule(editingId, editingName);
+    setEditingId(null);
+  }
+
+  function confirmCreate() {
+    onCreateSchedule(newScheduleName);
+    setCreatingNew(false);
+    setNewScheduleName('');
+  }
+
   return (
     <Modal visible={rendered} animationType="none" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -64,6 +116,11 @@ export default function SideMenu({
             {screen === 'main' && (
               <>
                 <Text style={styles.title}>Menú</Text>
+
+                <Pressable style={styles.menuRow} onPress={() => setScreen('schedules')}>
+                  <Text style={styles.menuRowText}>Horarios</Text>
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
 
                 <Pressable style={styles.menuRow} onPress={() => setScreen('colors')}>
                   <Text style={styles.menuRowText}>Ajustar colores</Text>
@@ -91,6 +148,107 @@ export default function SideMenu({
                         <Text style={styles.confirmButtonText}>Sí, limpiar</Text>
                       </Pressable>
                     </View>
+                  </View>
+                )}
+              </>
+            )}
+
+            {screen === 'schedules' && (
+              <>
+                <Pressable style={styles.backRow} onPress={() => setScreen('main')}>
+                  <Text style={styles.chevronBack}>‹</Text>
+                  <Text style={styles.backText}>Menú</Text>
+                </Pressable>
+
+                <Text style={styles.title}>Horarios</Text>
+
+                {schedules.map((s) => (
+                  <View key={s.id} style={styles.scheduleBlock}>
+                    {editingId === s.id ? (
+                      <View style={styles.inlineFormRow}>
+                        <TextInput
+                          style={styles.inlineInput}
+                          value={editingName}
+                          onChangeText={setEditingName}
+                          autoFocus
+                          placeholder="Nombre del horario"
+                          placeholderTextColor={COLORS.textLight}
+                        />
+                        <Pressable onPress={confirmRename} hitSlop={8}>
+                          <Text style={styles.inlineActionText}>Guardar</Text>
+                        </Pressable>
+                        <Pressable onPress={() => setEditingId(null)} hitSlop={8}>
+                          <Text style={[styles.inlineActionText, styles.inlineActionMuted]}>Cancelar</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View style={styles.scheduleRow}>
+                        <Pressable style={styles.scheduleMain} onPress={() => handleSwitch(s.id)}>
+                          <Text style={[styles.radioDot, s.id === activeScheduleId && { color: COLORS.primary }]}>
+                            {s.id === activeScheduleId ? '●' : '○'}
+                          </Text>
+                          <Text style={styles.scheduleName} numberOfLines={1}>
+                            {s.name}
+                          </Text>
+                        </Pressable>
+                        <Pressable onPress={() => startRename(s)} hitSlop={8}>
+                          <Text style={styles.iconButton}>✎</Text>
+                        </Pressable>
+                        {schedules.length > 1 && (
+                          <Pressable onPress={() => setConfirmingDeleteId(s.id)} hitSlop={8}>
+                            <Text style={[styles.iconButton, styles.dangerText]}>🗑</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    )}
+
+                    {confirmingDeleteId === s.id && (
+                      <View style={styles.confirmBox}>
+                        <Text style={styles.confirmText}>
+                          ¿Eliminar el horario "{s.name}"? Se perderán todas sus clases.
+                        </Text>
+                        <View style={styles.confirmActionsRow}>
+                          <Pressable
+                            style={[styles.smallButton, styles.cancelButton]}
+                            onPress={() => setConfirmingDeleteId(null)}
+                          >
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                          </Pressable>
+                          <Pressable
+                            style={[styles.smallButton, styles.dangerButton]}
+                            onPress={() => {
+                              onDeleteSchedule(s.id);
+                              setConfirmingDeleteId(null);
+                            }}
+                          >
+                            <Text style={styles.confirmButtonText}>Sí, eliminar</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                ))}
+
+                {!creatingNew ? (
+                  <Pressable style={styles.addScheduleButton} onPress={() => setCreatingNew(true)}>
+                    <Text style={styles.addScheduleButtonText}>+ Nuevo horario</Text>
+                  </Pressable>
+                ) : (
+                  <View style={[styles.inlineFormRow, { marginTop: 12 }]}>
+                    <TextInput
+                      style={styles.inlineInput}
+                      value={newScheduleName}
+                      onChangeText={setNewScheduleName}
+                      autoFocus
+                      placeholder="Ej: Semestre B"
+                      placeholderTextColor={COLORS.textLight}
+                    />
+                    <Pressable onPress={confirmCreate} hitSlop={8}>
+                      <Text style={styles.inlineActionText}>Crear</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setCreatingNew(false)} hitSlop={8}>
+                      <Text style={[styles.inlineActionText, styles.inlineActionMuted]}>Cancelar</Text>
+                    </Pressable>
                   </View>
                 )}
               </>
@@ -276,6 +434,76 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 1,
+  },
+  scheduleBlock: {
+    marginBottom: 4,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gridLine,
+    gap: 10,
+  },
+  scheduleMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  radioDot: {
+    fontSize: 16,
+    color: COLORS.textLight,
+  },
+  scheduleName: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.text,
+    fontWeight: '500',
+  },
+  iconButton: {
+    fontSize: 16,
+    color: COLORS.textLight,
+    paddingHorizontal: 4,
+  },
+  inlineFormRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  inlineInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: COLORS.gridLine,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: COLORS.text,
+    backgroundColor: '#FFFFFF',
+  },
+  inlineActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  inlineActionMuted: {
+    color: COLORS.textLight,
+    fontWeight: '600',
+  },
+  addScheduleButton: {
+    marginTop: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  addScheduleButtonText: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   confirmBox: {
     marginTop: 4,

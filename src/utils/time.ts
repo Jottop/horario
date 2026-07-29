@@ -39,6 +39,12 @@ export function isEndAfterStart(startTime: string, endTime: string): boolean {
   return timeToMinutes(endTime) > timeToMinutes(startTime);
 }
 
+/** Convierte una hora 0-23 a su equivalente 1-12 (para el eje de la grilla). 0 y 12 dan 12. */
+export function hourTo12(hour: number): number {
+  const mod = hour % 12;
+  return mod === 0 ? 12 : mod;
+}
+
 /** true si los rangos [startA,endA) y [startB,endB) se superponen en algún punto */
 export function doTimesOverlap(startA: string, endA: string, startB: string, endB: string): boolean {
   const a1 = timeToMinutes(startA);
