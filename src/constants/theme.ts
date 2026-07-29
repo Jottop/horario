@@ -29,7 +29,7 @@ export const PALETTE = [
 // antes de GRID_START_HOUR o termina después de GRID_END_HOUR, WeekCalendar extiende
 // la grilla dinámicamente para que esa clase se vea completa.
 export const GRID_START_HOUR = 9; // 09:00
-export const GRID_END_HOUR = 20; // 18:00
+export const GRID_END_HOUR = 19; // 18:00
 export const HOUR_HEIGHT = 60; // px por hora
 export const TIME_LABEL_WIDTH = 28; // px
 
