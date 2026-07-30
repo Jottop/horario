@@ -23,7 +23,9 @@ const WeekCalendar = React.forwardRef<View, Props>(function WeekCalendar(
   exportRef
 ) {
   // La grilla arranca/termina en GRID_START_HOUR-GRID_END_HOUR por defecto, pero se
-  // extiende si alguna clase empieza antes o termina después de ese rango.
+  // extiende si alguna clase empieza antes o termina después de ese rango. Si tuvo que
+  // estirarse hacia abajo (una clase termina tarde), se agrega 1 hora extra de margen
+  // visual debajo de esa clase. Hacia arriba no se agrega margen extra.
   const { gridStartHour, gridEndHour } = useMemo(() => {
     let start = GRID_START_HOUR;
     let end = GRID_END_HOUR;
@@ -33,6 +35,8 @@ const WeekCalendar = React.forwardRef<View, Props>(function WeekCalendar(
       if (startHour < start) start = startHour;
       if (endHour > end) end = endHour;
     });
+    // Si tuvo que estirarse más allá del final por defecto, se suma 1 hora de margen extra.
+    if (end > GRID_END_HOUR) end += 1;
     return { gridStartHour: start, gridEndHour: end };
   }, [events]);
 
