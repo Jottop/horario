@@ -19,13 +19,16 @@ interface Props {
   /** Todas las clases existentes, para validar que no se superpongan horarios */
   events: ClassEvent[];
   onClose: () => void;
-  /** Puede devolver varios eventos a la vez (uno por cada horario agregado al crear una clase nueva) */
-  onSave: (events: ClassEvent[]) => void;
+  /** Devuelve los eventos finales y los ids originales del grupo que se estaba editando
+   * (para poder reemplazar/eliminar los que correspondan, incluso si se quitó alguno) */
+  onSave: (events: ClassEvent[], originalIds: string[]) => void;
   onDelete: (id: string) => void;
 }
 
 interface ScheduleSlot {
   key: string;
+  /** Si este horario ya existía como clase guardada, acá está su id original */
+  existingId?: string;
   dayIndex: number;
   startTime: string;
   endTime: string;
@@ -47,6 +50,10 @@ export default function EventFormModal({ visible, initialEvent, events, onClose,
   const [color, setColor] = useState(PALETTE[0]);
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Ids de TODAS las clases que ya existían con el mismo nombre al abrir el formulario
+  // (para poder reemplazarlas/eliminarlas correctamente al guardar, aunque se haya
+  // quitado alguna en el medio).
+  const [originalGroupIds, setOriginalGroupIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (visible) {
@@ -55,17 +62,24 @@ export default function EventFormModal({ visible, initialEvent, events, onClose,
       setError('');
       setConfirmingDelete(false);
       if (initialEvent) {
-        // Editar: siempre un único horario, el del bloque que se tocó.
-        setSlots([
-          {
-            key: initialEvent.id,
-            dayIndex: initialEvent.dayIndex,
-            startTime: initialEvent.startTime,
-            endTime: initialEvent.endTime,
-          },
-        ]);
+        // Editar: se agrupan TODAS las clases que ya existan con el mismo nombre,
+        // no solo el bloque puntual que se tocó.
+        const group = events
+          .filter((e) => e.title === initialEvent.title)
+          .sort((a, b) => a.dayIndex - b.dayIndex || a.startTime.localeCompare(b.startTime));
+        setSlots(
+          group.map((e) => ({
+            key: e.id,
+            existingId: e.id,
+            dayIndex: e.dayIndex,
+            startTime: e.startTime,
+            endTime: e.endTime,
+          }))
+        );
+        setOriginalGroupIds(group.map((e) => e.id));
       } else {
         setSlots([makeSlot()]);
+        setOriginalGroupIds([]);
       }
     }
   }, [visible, initialEvent]);
@@ -108,11 +122,11 @@ export default function EventFormModal({ visible, initialEvent, events, onClose,
       }
     }
 
-    // Que no se superpongan con una clase ya existente (excluyendo la que se está editando)
+    // Que no se superpongan con una clase ya existente (excluyendo TODA la clase que se está editando)
     for (const slot of slots) {
       const conflict = events.find(
         (e) =>
-          e.id !== initialEvent?.id &&
+          !originalGroupIds.includes(e.id) &&
           e.dayIndex === slot.dayIndex &&
           doTimesOverlap(slot.startTime, slot.endTime, e.startTime, e.endTime)
       );
@@ -122,20 +136,21 @@ export default function EventFormModal({ visible, initialEvent, events, onClose,
       }
     }
 
-    const newEvents: ClassEvent[] = slots.map((slot, idx) => ({
-      id: isEditing && idx === 0 ? initialEvent!.id : makeId(),
+    const newEvents: ClassEvent[] = slots.map((slot) => ({
+      id: slot.existingId ?? makeId(),
       title: title.trim(),
       dayIndex: slot.dayIndex,
       startTime: slot.startTime,
       endTime: slot.endTime,
       color,
     }));
-    onSave(newEvents);
+    onSave(newEvents, originalGroupIds);
   }
 
   function handleConfirmDelete() {
-    if (!initialEvent) return;
-    onDelete(initialEvent.id);
+    if (slots.length !== 1) return;
+    const onlySlot = slots[0];
+    onDelete(onlySlot.existingId ?? onlySlot.key);
   }
 
   return (
@@ -215,11 +230,9 @@ export default function EventFormModal({ visible, initialEvent, events, onClose,
               </View>
             ))}
 
-            {!isEditing && (
-              <Pressable style={styles.addSlotButton} onPress={addSlot}>
-                <Text style={styles.addSlotButtonText}>+ Agregar otro horario</Text>
-              </Pressable>
-            )}
+            <Pressable style={styles.addSlotButton} onPress={addSlot}>
+              <Text style={styles.addSlotButtonText}>+ Agregar otro horario</Text>
+            </Pressable>
 
             {!!error && <Text style={styles.error}>{error}</Text>}
 
@@ -232,13 +245,13 @@ export default function EventFormModal({ visible, initialEvent, events, onClose,
               </Pressable>
             </View>
 
-            {isEditing && !confirmingDelete && (
+            {isEditing && slots.length === 1 && !confirmingDelete && (
               <Pressable style={styles.deleteButton} onPress={() => setConfirmingDelete(true)}>
                 <Text style={styles.deleteButtonText}>Eliminar clase</Text>
               </Pressable>
             )}
 
-            {isEditing && confirmingDelete && (
+            {isEditing && slots.length === 1 && confirmingDelete && (
               <View style={styles.confirmBox}>
                 <Text style={styles.confirmText}>
                   ¿Seguro que quieres eliminar "{initialEvent?.title}"?

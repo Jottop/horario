@@ -104,12 +104,13 @@ function AppContent() {
     setModalVisible(true);
   }
 
-  function handleSave(newEvents: ClassEvent[]) {
+  function handleSave(newEvents: ClassEvent[], originalIds: string[]) {
     updateActiveEvents((prev) => {
-      // Los ids que ya existían en prev corresponden a horarios editados (se reemplazan);
-      // los ids nuevos corresponden a horarios agregados (se suman).
-      const incomingIds = new Set(newEvents.map((e) => e.id));
-      const kept = prev.filter((e) => !incomingIds.has(e.id));
+      // Se quitan TODOS los ids originales del grupo que se estaba editando (incluso los
+      // que el usuario haya quitado con "Quitar" y ya no estén en newEvents), y se agregan
+      // los eventos finales. Al crear una clase nueva, originalIds llega vacío.
+      const originalIdsSet = new Set(originalIds);
+      const kept = prev.filter((e) => !originalIdsSet.has(e.id));
       return [...kept, ...newEvents];
     });
     setModalVisible(false);
